@@ -179,7 +179,7 @@ def update(dt):
                 if zombie.frame_index >= len(dead_images):
                     zombies.remove(zombie)
                 else:
-                    bottom_pos = zombie.bottom  # <--- CORREÇÃO
+                    bottom_pos = zombie.bottom
                     zombie.image = dead_images[zombie.frame_index]
                     zombie.bottom = bottom_pos
             continue
@@ -192,7 +192,7 @@ def update(dt):
         if zombie.frame_timer > 0.2:
             zombie.frame_timer = 0
             zombie.frame_index = (zombie.frame_index + 1) % len(zombie_images)
-            bottom_pos = zombie.bottom  # <--- CORREÇÃO
+            bottom_pos = zombie.bottom
             zombie.image = zombie_images[zombie.frame_index]
             zombie.bottom = bottom_pos
 
