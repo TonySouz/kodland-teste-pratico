@@ -177,8 +177,8 @@ def update(dt):
                 zombie.frame_index = 0
                 zombie.frame_timer = 0
                 zombie.image = dead_images[0]
-                if bullet in bullets:
-                    bullets.remove(bullet)
+                bullets.remove(bullet)
+                break
         if bullet.y < 0:
             bullets.remove(bullet)
 
@@ -230,17 +230,16 @@ def shoot():
     hero_shoot_timer = 0
     hero_shoot_frame = 0
     hero.image = bullet_images[0]
-    play_sound("fire")
     
-    # Remover o zumbi mais próximo iniciando animação de morte
-    alive_zombies = [z for z in zombies if not getattr(z, "dying", False)]
-    if alive_zombies:
-        alive_zombies.sort(key=lambda z: abs(z.x - hero.x))
-        target = alive_zombies[0]
-        target.dying = True
-        target.frame_index = 0
-        target.frame_timer = 0
-        target.image = dead_images[0]
+    # cria a bala na posição do herói
+    bullet = Actor("fire/fire1")  # type: ignore
+    bullet.x = hero.x
+    bullet.y = hero.top
+    bullets.append(bullet)
+    
+    # toca o som de tiro
+    if sound_on:
+        sounds.fire.play()  # type: ignore
 
 # --- RODAR JOGO ---
 pgzrun.go()  # type: ignore
