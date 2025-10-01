@@ -9,6 +9,7 @@ TITLE = "Meu Jogo Base"
 # --- CHÃO ---
 ground_height = 50
 ground_color = (169, 169, 169)  # cinza concreto
+ground_offset = 0  # ajuste se precisar alinhar imagens
 
 # --- ESTADOS DO JOGO ---
 game_state = "menu"  # "menu" | "playing" | "gameover"
@@ -17,12 +18,11 @@ sound_on = True
 
 # --- HERÓI ---
 hero_images_idle = ["base/base1", "base/base2", "base/base3"]
-hero = Actor("base/base1")  # type: ignore
-hero.x = WIDTH // 2
-hero.bottom = HEIGHT - ground_height  # coloca no chão
+hero = Actor("base/base1", (WIDTH // 2, HEIGHT - ground_height))  # type: ignore
 hero_idle_index = 0
 hero_idle_timer = 0
 hero_speed = 200  # pixels por segundo
+hero.bottom = HEIGHT - ground_height + ground_offset  # sempre no chão
 
 # --- ANIMAÇÃO DE CORRIDA ---
 hero_running_right = ["run/run1", "run/run2", "run/run3", "run/run4"]
@@ -62,8 +62,11 @@ def toggle_sound():
     sound_on = not sound_on
 
 def play_sound(name):
-    if sound_on and name in sounds.__dir__():  # type: ignore
-        getattr(sounds, name).play()  # type: ignore
+    if sound_on:
+        try:
+            getattr(sounds, name).play() # type: ignore
+        except AttributeError:
+            print(f"Som '{name}' não encontrado!")
 
 # --- ZUMBIS ---
 zombies = []
@@ -85,13 +88,13 @@ def update(dt):
 
     is_running = False
     # Movimento do herói
-    if keyboard.left:  # type: ignore
+    if keyboard.left: # type: ignore
         hero.x -= hero_speed * dt
         if hero.x < hero.width // 2:
             hero.x = hero.width // 2
         is_running = True
         running_direction = "left"
-    elif keyboard.right:  # type: ignore
+    elif keyboard.right: # type: ignore
         hero.x += hero_speed * dt
         if hero.x > WIDTH - hero.width // 2:
             hero.x = WIDTH - hero.width // 2
@@ -99,7 +102,7 @@ def update(dt):
         running_direction = "right"
 
     # herói sempre encostando no chão
-    hero.bottom = HEIGHT - ground_height
+    hero.bottom = HEIGHT - ground_height + ground_offset
 
     # Animações do herói
     if is_running and not hero_shooting:
@@ -131,9 +134,8 @@ def update(dt):
     spawn_timer += dt
     if spawn_timer >= spawn_interval:
         spawn_timer = 0
-        zombie = Actor(zombie_images[0])  # type: ignore
-        zombie.x = WIDTH + 50
-        zombie.bottom = HEIGHT - ground_height  # coloca no chão
+        zombie = Actor(zombie_images[0], (WIDTH + 50, HEIGHT - ground_height + ground_offset))  # type: ignore
+        zombie.bottom = HEIGHT - ground_height + ground_offset  # sempre no chão
         zombie.frame_index = 0
         zombie.frame_timer = 0
         zombie.dying = False
@@ -141,8 +143,6 @@ def update(dt):
 
     # Atualizar zumbis
     for zombie in zombies[:]:
-        zombie.bottom = HEIGHT - ground_height  # garante que fique no chão
-
         if hasattr(zombie, "dying") and zombie.dying:  # zumbi morrendo
             zombie.frame_timer += dt
             if zombie.frame_timer > 0.2:
@@ -156,6 +156,7 @@ def update(dt):
 
         # zumbi vivo se move
         zombie.x -= zombie_speed * dt
+        zombie.bottom = HEIGHT - ground_height + ground_offset  # sempre no chão
 
         zombie.frame_timer += dt
         if zombie.frame_timer > 0.2:
@@ -177,26 +178,26 @@ def update(dt):
                 zombie.frame_index = 0
                 zombie.frame_timer = 0
                 zombie.image = dead_images[0]
-                bullets.remove(bullet)
-                break
+                if bullet in bullets:
+                    bullets.remove(bullet)
         if bullet.y < 0:
             bullets.remove(bullet)
 
 # --- DRAW ---
 def draw():
-    screen.clear()  # type: ignore
+    screen.clear() # type: ignore
     if game_state == "menu":
-        screen.draw.text("MENU PRINCIPAL", center=(WIDTH//2, 100), fontsize=50, color="white")  # type: ignore
-        screen.draw.filled_rect(menu_buttons["start"], "blue")  # type: ignore
-        screen.draw.text("Start", center=menu_buttons["start"].center, fontsize=40, color="white")  # type: ignore
-        screen.draw.filled_rect(menu_buttons["music"], "green")  # type: ignore
+        screen.draw.text("MENU PRINCIPAL", center=(WIDTH//2, 100), fontsize=50, color="white") # type: ignore
+        screen.draw.filled_rect(menu_buttons["start"], "blue") # type: ignore
+        screen.draw.text("Start", center=menu_buttons["start"].center, fontsize=40, color="white") # type: ignore
+        screen.draw.filled_rect(menu_buttons["music"], "green") # type: ignore
         status = "ON" if music_on else "OFF"
-        screen.draw.text(f"Music {status}", center=menu_buttons["music"].center, fontsize=40, color="white")  # type: ignore
-        screen.draw.filled_rect(menu_buttons["quit"], "red")  # type: ignore
-        screen.draw.text("Quit", center=menu_buttons["quit"].center, fontsize=40, color="white")  # type: ignore
+        screen.draw.text(f"Music {status}", center=menu_buttons["music"].center, fontsize=40, color="white") # type: ignore
+        screen.draw.filled_rect(menu_buttons["quit"], "red") # type: ignore
+        screen.draw.text("Quit", center=menu_buttons["quit"].center, fontsize=40, color="white") # type: ignore
     elif game_state == "playing":
         ground_rect = Rect(0, HEIGHT - ground_height, WIDTH, ground_height)
-        screen.draw.filled_rect(ground_rect, ground_color)  # type: ignore
+        screen.draw.filled_rect(ground_rect, ground_color) # type: ignore
         hero.draw()
         for zombie in zombies:
             zombie.draw()
@@ -230,16 +231,17 @@ def shoot():
     hero_shoot_timer = 0
     hero_shoot_frame = 0
     hero.image = bullet_images[0]
+    play_sound("fire")
     
-    # cria a bala na posição do herói
-    bullet = Actor("fire/fire1")  # type: ignore
-    bullet.x = hero.x
-    bullet.y = hero.top
-    bullets.append(bullet)
-    
-    # toca o som de tiro
-    if sound_on:
-        sounds.fire.play()  # type: ignore
+    # Remover o zumbi mais próximo iniciando animação de morte
+    alive_zombies = [z for z in zombies if not getattr(z, "dying", False)]
+    if alive_zombies:
+        alive_zombies.sort(key=lambda z: abs(z.x - hero.x))
+        target = alive_zombies[0]
+        target.dying = True
+        target.frame_index = 0
+        target.frame_timer = 0
+        target.image = dead_images[0]
 
 # --- RODAR JOGO ---
 pgzrun.go()  # type: ignore
