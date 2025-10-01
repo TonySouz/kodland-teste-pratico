@@ -1,148 +1,246 @@
-# type: ignore
-
-import random
-from pygame import Rect
 import pgzrun
+from pygame import Rect
 
-# --- Configurações ---
-WIDTH, HEIGHT = 800, 480
-GRAVITY = 0.8
-game_state = "menu"
+# --- CONFIGURAÇÕES DA JANELA ---
+WIDTH = 800
+HEIGHT = 600
+TITLE = "Meu Jogo Base"
+
+# --- CHÃO ---
+ground_height = 50
+ground_color = (169, 169, 169)  # cinza concreto
+
+# --- ESTADOS DO JOGO ---
+game_state = "menu"  # "menu" | "playing" | "gameover"
+music_on = True
 sound_on = True
 
-# --- Botões ---
-class Button:
-    def __init__(self, x, y, w, h, text):
-        self.rect = Rect(x, y, w, h)
-        self.text = text
-        self.color = (0, 150, 255)
+# --- HERÓI ---
+hero_images_idle = ["base/base1", "base/base2", "base/base3"]
+hero = Actor("base/base1")  # type: ignore
+hero.x = WIDTH // 2
+hero.bottom = HEIGHT - ground_height  # coloca no chão
+hero_idle_index = 0
+hero_idle_timer = 0
+hero_speed = 200  # pixels por segundo
 
-    def draw(self):
-        screen.draw.filled_rect(self.rect, self.color)
-        screen.draw.textbox(self.text, self.rect, color="black")
+# --- ANIMAÇÃO DE CORRIDA ---
+hero_running_right = ["run/run1", "run/run2", "run/run3", "run/run4"]
+hero_running_left = ["run/run1-1", "run/run2-2", "run/run3-3", "run/run4-4"]
+hero_run_index = 0
+hero_run_timer = 0
+is_running = False
+running_direction = "right"  # "right" ou "left"
 
-    def clicked(self, pos):
-        return self.rect.collidepoint(pos)
+# --- ANIMAÇÃO DE TIRO ---
+hero_shooting = False
+hero_shoot_timer = 0
+hero_shoot_frame = 0
+bullet_images = ["fire/fire1", "fire/fire2", "fire/fire3"]
 
-button_start = Button(300, 160, 200, 50, "Start")
-button_sound = Button(300, 230, 200, 50, f"Sound: On")
-button_exit = Button(300, 300, 200, 50, "Exit")
-button_back = Button(300, 340, 200, 40, "Menu")
+# Lista de balas
+bullets = []
 
-# --- Personagens ---
-class Character:
-    def __init__(self, x, y, w, h, color):
-        self.x, self.y = x, y
-        self.w, self.h = w, h
-        self.vx, self.vy = 0, 0
-        self.color = color
-        self.on_ground = True
-        self.dir = 1
+# --- BOTÕES DO MENU ---
+menu_buttons = {
+    "start": Rect((WIDTH//2 - 100, 200), (200, 60)),
+    "music": Rect((WIDTH//2 - 100, 300), (200, 60)),
+    "quit": Rect((WIDTH//2 - 100, 400), (200, 60)),
+}
 
-    def rect(self):
-        return Rect(int(self.x - self.w / 2), int(self.y - self.h), self.w, self.h)
+# --- FUNÇÕES DE SOM/MÚSICA ---
+def toggle_music():
+    global music_on
+    music_on = not music_on
+    if music_on:
+        music.play("theme")  # type: ignore
+    else:
+        music.stop()  # type: ignore
 
-    def draw(self):
-        screen.draw.filled_rect(self.rect(), self.color)
+def toggle_sound():
+    global sound_on
+    sound_on = not sound_on
 
-class Hero(Character):
-    def __init__(self, x, y):
-        super().__init__(x, y, 34, 54, (40, 180, 40))
+def play_sound(name):
+    if sound_on and name in sounds.__dir__():  # type: ignore
+        getattr(sounds, name).play()  # type: ignore
 
-    def update(self):
-        self.vx = 0
-        if keyboard.left:
-            self.vx = -3
-            self.dir = -1
-        if keyboard.right:
-            self.vx = 3
-            self.dir = 1
-        if keyboard.space and self.on_ground:
-            self.vy = -12
-            self.on_ground = False
+# --- ZUMBIS ---
+zombies = []
+zombie_images = ["zombie/zombie1", "zombie/zombie2", "zombie/zombie3", "zombie/zombie4"]
+dead_images = ["dead/dead1", "dead/dead2", "dead/dead3"]
+zombie_speed = 150  # pixels por segundo
+spawn_timer = 0
+spawn_interval = 2.0  # a cada 2 segundos aparece um zumbi
 
-        self.vy += GRAVITY
-        self.y += self.vy
-        self.x += self.vx
+# --- UPDATE ---
+def update(dt):
+    global hero_idle_index, hero_idle_timer
+    global hero_shooting, hero_shoot_timer, hero_shoot_frame
+    global is_running, hero_run_index, hero_run_timer, running_direction
+    global spawn_timer, zombies, game_state, bullets
 
-        # Limites do chão
-        if self.y >= HEIGHT - 50:
-            self.y = HEIGHT - 50
-            self.vy = 0
-            self.on_ground = True
-        self.x = max(20, min(WIDTH - 20, self.x))
+    if game_state != "playing":
+        return
 
-class Enemy(Character):
-    def __init__(self, x, y, a, b):
-        super().__init__(x, y, 32, 48, (200, 30, 30))
-        self.a, self.b = a, b
-        self.vx = random.choice([-2, 2])
+    is_running = False
+    # Movimento do herói
+    if keyboard.left:  # type: ignore
+        hero.x -= hero_speed * dt
+        if hero.x < hero.width // 2:
+            hero.x = hero.width // 2
+        is_running = True
+        running_direction = "left"
+    elif keyboard.right:  # type: ignore
+        hero.x += hero_speed * dt
+        if hero.x > WIDTH - hero.width // 2:
+            hero.x = WIDTH - hero.width // 2
+        is_running = True
+        running_direction = "right"
 
-    def update(self):
-        self.x += self.vx
-        if self.x < self.a or self.x > self.b:
-            self.vx *= -1
+    # herói sempre encostando no chão
+    hero.bottom = HEIGHT - ground_height
 
-# --- Inicialização ---
-def reset_game():
-    global player, enemies
-    player = Hero(150, HEIGHT - 50)
-    enemies = [Enemy(450, HEIGHT - 50, 400, 600),
-               Enemy(650, HEIGHT - 50, 620, 760)]
+    # Animações do herói
+    if is_running and not hero_shooting:
+        hero_run_timer += dt
+        if hero_run_timer > 0.1:
+            hero_run_timer = 0
+            hero_run_index = (hero_run_index + 1) % 4
+            hero.image = hero_running_right[hero_run_index] if running_direction == "right" else hero_running_left[hero_run_index]
+    elif not hero_shooting:
+        hero_idle_timer += dt
+        if hero_idle_timer > 0.3:
+            hero_idle_timer = 0
+            hero_idle_index = (hero_idle_index + 1) % len(hero_images_idle)
+            hero.image = hero_images_idle[hero_idle_index]
+    if hero_shooting:
+        hero_shoot_timer += dt
+        if hero_shoot_timer > 0.1:
+            hero_shoot_timer = 0
+            hero_shoot_frame += 1
+            if hero_shoot_frame >= len(bullet_images):
+                hero_shooting = False
+                hero_shoot_frame = 0
+                hero_idle_index = 0
+                hero.image = hero_images_idle[hero_idle_index]
+            else:
+                hero.image = bullet_images[hero_shoot_frame]
 
-reset_game()
+    # Spawn de zumbis
+    spawn_timer += dt
+    if spawn_timer >= spawn_interval:
+        spawn_timer = 0
+        zombie = Actor(zombie_images[0])  # type: ignore
+        zombie.x = WIDTH + 50
+        zombie.bottom = HEIGHT - ground_height  # coloca no chão
+        zombie.frame_index = 0
+        zombie.frame_timer = 0
+        zombie.dying = False
+        zombies.append(zombie)
 
-# --- Desenho ---
-def draw_menu():
-    screen.clear()
-    screen.draw.text("PLATFORMER", (280, 80), fontsize=50)
-    for b in [button_start, button_sound, button_exit]:
-        b.draw()
+    # Atualizar zumbis
+    for zombie in zombies[:]:
+        zombie.bottom = HEIGHT - ground_height  # garante que fique no chão
 
-def draw_game():
-    screen.clear()
-    # chão
-    screen.draw.filled_rect(Rect(0, HEIGHT - 50, WIDTH, 50), (80, 50, 20))
-    player.draw()
-    for e in enemies:
-        e.draw()
+        if hasattr(zombie, "dying") and zombie.dying:  # zumbi morrendo
+            zombie.frame_timer += dt
+            if zombie.frame_timer > 0.2:
+                zombie.frame_timer = 0
+                zombie.frame_index += 1
+                if zombie.frame_index >= len(dead_images):
+                    zombies.remove(zombie)
+                else:
+                    zombie.image = dead_images[zombie.frame_index]
+            continue
 
-def draw_gameover():
-    screen.clear()
-    screen.draw.text("GAME OVER", (300, 200), fontsize=60)
-    button_back.draw()
+        # zumbi vivo se move
+        zombie.x -= zombie_speed * dt
 
-def draw():
-    if game_state == "menu":
-        draw_menu()
-    elif game_state == "playing":
-        draw_game()
-    elif game_state == "gameover":
-        draw_gameover()
+        zombie.frame_timer += dt
+        if zombie.frame_timer > 0.2:
+            zombie.frame_timer = 0
+            zombie.frame_index = (zombie.frame_index + 1) % len(zombie_images)
+            zombie.image = zombie_images[zombie.frame_index]
 
-# --- Atualização ---
-def update():
-    global game_state
-    if game_state == "playing":
-        player.update()
-        for e in enemies:
-            e.update()
-        if any(player.rect().colliderect(e.rect()) for e in enemies):
+        # Colisão com herói
+        if abs(zombie.x - hero.x) < 40:
             game_state = "gameover"
 
-# --- Entrada do mouse ---
-def on_mouse_down(pos):
-    global game_state, sound_on
-    if game_state == "menu":
-        if button_start.clicked(pos):
-            reset_game()
-            game_state = "playing"
-        elif button_sound.clicked(pos):
-            sound_on = not sound_on
-            button_sound.text = f"Sound: {'On' if sound_on else 'Off'}"
-        elif button_exit.clicked(pos):
-            quit()
-    elif game_state == "gameover" and button_back.clicked(pos):
-        game_state = "menu"
+    # Atualizar balas
+    for bullet in bullets[:]:
+        bullet.y -= 500 * dt
+        for zombie in zombies[:]:
+            if bullet.colliderect(zombie) and not getattr(zombie, "dying", False):
+                play_sound("hit")
+                zombie.dying = True
+                zombie.frame_index = 0
+                zombie.frame_timer = 0
+                zombie.image = dead_images[0]
+                if bullet in bullets:
+                    bullets.remove(bullet)
+        if bullet.y < 0:
+            bullets.remove(bullet)
 
-pgzrun.go()
+# --- DRAW ---
+def draw():
+    screen.clear()  # type: ignore
+    if game_state == "menu":
+        screen.draw.text("MENU PRINCIPAL", center=(WIDTH//2, 100), fontsize=50, color="white")  # type: ignore
+        screen.draw.filled_rect(menu_buttons["start"], "blue")  # type: ignore
+        screen.draw.text("Start", center=menu_buttons["start"].center, fontsize=40, color="white")  # type: ignore
+        screen.draw.filled_rect(menu_buttons["music"], "green")  # type: ignore
+        status = "ON" if music_on else "OFF"
+        screen.draw.text(f"Music {status}", center=menu_buttons["music"].center, fontsize=40, color="white")  # type: ignore
+        screen.draw.filled_rect(menu_buttons["quit"], "red")  # type: ignore
+        screen.draw.text("Quit", center=menu_buttons["quit"].center, fontsize=40, color="white")  # type: ignore
+    elif game_state == "playing":
+        ground_rect = Rect(0, HEIGHT - ground_height, WIDTH, ground_height)
+        screen.draw.filled_rect(ground_rect, ground_color)  # type: ignore
+        hero.draw()
+        for zombie in zombies:
+            zombie.draw()
+        for bullet in bullets:
+            bullet.draw()
+    elif game_state == "gameover":
+        screen.draw.text("GAME OVER", center=(WIDTH//2, HEIGHT//2), fontsize=80, color="red")  # type: ignore
+
+# --- INPUT ---
+def on_key_down(key):
+    if game_state == "playing" and key == keys.SPACE:  # type: ignore
+        shoot()
+
+def on_mouse_down(pos):
+    global game_state
+    if game_state != "menu":
+        return
+    if menu_buttons["start"].collidepoint(pos):  # type: ignore
+        game_state = "playing"
+        if music_on:
+            music.play("theme")  # type: ignore
+    elif menu_buttons["music"].collidepoint(pos):  # type: ignore
+        toggle_music()
+    elif menu_buttons["quit"].collidepoint(pos):  # type: ignore
+        exit()
+
+# --- TIRO ---
+def shoot():
+    global hero_shooting, hero_shoot_timer, hero_shoot_frame
+    hero_shooting = True
+    hero_shoot_timer = 0
+    hero_shoot_frame = 0
+    hero.image = bullet_images[0]
+    play_sound("fire")
+    
+    # Remover o zumbi mais próximo iniciando animação de morte
+    alive_zombies = [z for z in zombies if not getattr(z, "dying", False)]
+    if alive_zombies:
+        alive_zombies.sort(key=lambda z: abs(z.x - hero.x))
+        target = alive_zombies[0]
+        target.dying = True
+        target.frame_index = 0
+        target.frame_timer = 0
+        target.image = dead_images[0]
+
+# --- RODAR JOGO ---
+pgzrun.go()  # type: ignore
