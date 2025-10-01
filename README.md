@@ -1,84 +1,58 @@
-# Platformer Pygame Zero
+# 🧟 SURVIVAL
 
-Um jogo de plataforma simples feito com **Pygame Zero**.
-Controle um herói que precisa evitar inimigos patrulheiros 
-enquanto se movimenta pelo cenário.
+**Plataforma:** Python (Pygame Zero)
+**Gênero:** Ação / Sobrevivência
 
----
+## 🎮 Descrição
 
-## 🎮 Controles
+**SURVIVAL** é um jogo de ação 2D onde o jogador controla um herói que deve sobreviver a hordas de zumbis. Movimente-se para esquerda ou direita, atire nos inimigos e tente sobreviver o maior tempo possível.
 
-* **Seta esquerda / Seta direita**: mover o herói
-* **Espaço**: pular
-* **Mouse**: clicar nos botões do menu e Game Over
+O jogo possui:
 
----
+* Menu interativo com botões para iniciar, ativar/desativar música e sair do jogo.
+* Animações de corrida e tiro do herói.
+* Zumbis que surgem continuamente e perseguem o jogador.
+* Sons para tiros e acertos, além de música de fundo opcional.
 
-## 🖥️ Requisitos
+## ⌨️ Controles
 
-* Python 3.x
+* **Setas esquerda/direita:** Movimentar o herói.
+* **Espaço:** Atirar.
+* **Mouse:** Selecionar opções do menu.
+
+## 🛠 Requisitos
+
+* Python 3.7 ou superior
 * [Pygame Zero](https://pygame-zero.readthedocs.io/en/stable/)
+* Assets organizados na estrutura de pastas usada no código:
 
-Instalação do Pygame Zero via pip:
+  ```
+  base/          # imagens do herói parado
+  run/           # imagens da corrida do herói
+  fire/          # imagens do tiro
+  zombie/        # imagens dos zumbis
+  dead/          # imagens dos zumbis mortos
+  sounds/        # arquivos de som (hit, fire, etc.)
+  music/         # música tema
+  ```
 
-```bash
-pip install pgzero
-```
+## ▶️ Como Jogar
 
----
+1. Abra o terminal e navegue até a pasta do jogo.
+2. Execute o comando:
 
-## 🚀 Como rodar
+   ```bash
+   pgzrun game.py
+   ```
+3. Use os controles para jogar e sobreviver aos ataques dos zumbis.
+4. Divirta-se!
 
-1. Salve o arquivo do jogo, por exemplo: `game.py`
-2. Abra o terminal na pasta do arquivo
-3. Execute:
+## ⚠️ Observações
 
-```bash
-pgzrun game.py
-```
+* A música pode ser ligada ou desligada no menu.
+* Cada tiro elimina o zumbi mais próximo do herói.
+* O jogo termina quando um zumbi toca o herói.
 
-O jogo abrirá em uma janela e estará pronto para jogar.
+## 📝 Créditos
 
----
-
-## 📝 Funcionalidades
-
-* Menu principal com botões:
-
-  * **Start**: iniciar o jogo
-  * **Sound On/Off**: alternar sons (placeholder para futuras melhorias)
-  * **Exit**: fechar o jogo
-* Game Over com botão para voltar ao menu
-* Herói com movimento lateral e pulo
-* Inimigos que patrulham entre limites definidos
-* Detecção de colisão entre herói e inimigos
-
----
-
-## 🔧 Estrutura do Código
-
-* **Character**: classe base para heróis e inimigos
-* **Hero**: personagem controlável
-* **Enemy**: inimigos patrulheiros
-* **Button**: classe para gerenciar botões do menu
-* **Funções**:
-
-  * `draw_menu()`, `draw_game()`, `draw_gameover()` → desenham as telas
-  * `update()` → lógica de movimentação e colisão
-  * `on_mouse_down(pos)` → interação com botões
-  * `reset_game()` → reinicia herói e inimigos
-
----
-
-## 🌟 Melhorias Futuras
-
-* Adicionar plataformas flutuantes
-* Sons para pulo, colisão e pontuação
-* Sistema de pontuação
-* Animações para o herói e inimigos
-
----
-
-## 📄 Licença
-
-Este projeto é open-source e pode ser usado e modificado livremente.
+Feito por **Tony Souza**
