@@ -4,7 +4,7 @@ from pygame import Rect
 # --- CONFIGURAÇÕES DA JANELA ---
 WIDTH = 800
 HEIGHT = 600
-TITLE = "Meu Jogo Base"
+TITLE = "Survival Game"
 
 # --- CHÃO ---
 ground_height = 50
