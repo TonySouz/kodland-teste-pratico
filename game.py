@@ -8,8 +8,8 @@ TITLE = "Meu Jogo Base"
 
 # --- CHÃO ---
 ground_height = 50
-ground_color = (169, 169, 169)  # cinza concreto
-ground_offset = 0  # ajuste se precisar alinhar imagens
+ground_color = (169, 169, 169)
+ground_offset = 0
 
 # --- ESTADOS DO JOGO ---
 game_state = "menu"  # "menu" | "playing" | "gameover"
@@ -21,8 +21,8 @@ hero_images_idle = ["base/base1", "base/base2", "base/base3"]
 hero = Actor("base/base1", (WIDTH // 2, HEIGHT - ground_height))  # type: ignore
 hero_idle_index = 0
 hero_idle_timer = 0
-hero_speed = 200  # pixels por segundo
-hero.bottom = HEIGHT - ground_height + ground_offset  # sempre no chão
+hero_speed = 200
+hero.bottom = HEIGHT - ground_height + ground_offset
 
 # --- ANIMAÇÃO DE CORRIDA ---
 hero_running_right = ["run/run1", "run/run2", "run/run3", "run/run4"]
@@ -72,9 +72,9 @@ def play_sound(name):
 zombies = []
 zombie_images = ["zombie/zombie1", "zombie/zombie2", "zombie/zombie3", "zombie/zombie4"]
 dead_images = ["dead/dead1", "dead/dead2", "dead/dead3"]
-zombie_speed = 150  # pixels por segundo
+zombie_speed = 150
 spawn_timer = 0
-spawn_interval = 2.0  # a cada 2 segundos aparece um zumbi
+spawn_interval = 2.0
 
 # --- UPDATE ---
 def update(dt):
@@ -135,7 +135,7 @@ def update(dt):
     if spawn_timer >= spawn_interval:
         spawn_timer = 0
         zombie = Actor(zombie_images[0], (WIDTH + 50, HEIGHT - ground_height + ground_offset))  # type: ignore
-        zombie.bottom = HEIGHT - ground_height + ground_offset  # sempre no chão
+        zombie.bottom = HEIGHT - ground_height + ground_offset
         zombie.frame_index = 0
         zombie.frame_timer = 0
         zombie.dying = False
@@ -143,7 +143,7 @@ def update(dt):
 
     # Atualizar zumbis
     for zombie in zombies[:]:
-        if hasattr(zombie, "dying") and zombie.dying:  # zumbi morrendo
+        if hasattr(zombie, "dying") and zombie.dying:
             zombie.frame_timer += dt
             if zombie.frame_timer > 0.2:
                 zombie.frame_timer = 0
@@ -156,7 +156,7 @@ def update(dt):
 
         # zumbi vivo se move
         zombie.x -= zombie_speed * dt
-        zombie.bottom = HEIGHT - ground_height + ground_offset  # sempre no chão
+        zombie.bottom = HEIGHT - ground_height + ground_offset
 
         zombie.frame_timer += dt
         if zombie.frame_timer > 0.2:
@@ -187,7 +187,7 @@ def update(dt):
 def draw():
     screen.clear() # type: ignore
     if game_state == "menu":
-        screen.draw.text("MENU PRINCIPAL", center=(WIDTH//2, 100), fontsize=50, color="white") # type: ignore
+        screen.draw.text("SURVIVAL", center=(WIDTH//2, 100), fontsize=50, color="white") # type: ignore
         screen.draw.filled_rect(menu_buttons["start"], "blue") # type: ignore
         screen.draw.text("Start", center=menu_buttons["start"].center, fontsize=40, color="white") # type: ignore
         screen.draw.filled_rect(menu_buttons["music"], "green") # type: ignore
